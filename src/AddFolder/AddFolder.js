@@ -1,8 +1,12 @@
-import React from 'react'
+import React, { Component } from 'react'
+import NotefulForm from '../NotefulForm/NotefulForm'
 import ValidationError from '../ValidationError/ValidationError'
 import PropTypes from 'prop-types'
+import ApiContext from '../ApiContext'
+import config from '../config'
 
-export default class AddFolder extends React.Component {
+export default class AddFolder extends Component {
+  static contextType = ApiContext;
   constructor(props){
     super(props)
     this.state = {
@@ -11,66 +15,88 @@ export default class AddFolder extends React.Component {
       formValid: false,
       hasError: false,
       validationMessages: {
-        name: '',
+        name: ''
       }
     }
   }
-  setName(name) {
-    this.setState({name}, () => this.validateName(name));
-  }
-  validateName(folder) {
-       const fieldErrors = {...this.state.validationMessages};
-       let nameValid = true;
-       let hasError = false
 
-       folder = folder.replace(/[\s-]/g, ''); // Remove whitespace and dashes
-       if (folder.length < 3 || folder.length === 0) { // Check if it's 9 characters long
-           fieldErrors.name = 'Folder name must be at least three characters long';
-           nameValid = false;
-           hasError = true
-       } else {
-         fieldErrors.name = '';
-         nameValid = true
-         hasError = false
-       }
-       this.setState({validationMessages: fieldErrors, nameValid: !hasError}, this.formValid);
+  setName(name) {
+    this.setState({ name }, () => this.validateName(name))
   }
-  formValid() {
+
+  validateName(folder){
+    const fieldErrors = { ...this.state.validationMessages }
+    let nameValid = true
+    let hasError = false
+
+    folder = folder.replace(/[\s-]/g, '')
+    if(folder.length < 3 || folder.length === 0){
+      fieldErrors.name = 'Folder name must be at least three characters long'
+      nameValid = false
+      hasError = true
+    } 
+    else {
+      fieldErrors.name = ''
+      nameValid = true
+      hasError = false
+    }
+    this.setState({ validationMessages: fieldErrors, nameValid: !hasError }, this.formValid);
+  }
+
+  formValid(){
     this.setState({
       formValid: this.state.nameValid
-    });
+    })
   }
-  handleSubmit(e) {
-    e.preventDefault();
-    const {name} = this.state;
-    const nameObj = { name: name}
-    const POSTbody = JSON.stringify(nameObj)
-    let error = false;
-    fetch('http://localhost:9090/folders', {
+
+  handleSubmit = e => {
+    e.preventDefault()
+    const folder = {
+      name: e.target['folder-name'].value
+    }
+    fetch(`${config.API_ENDPOINT}/folders`, {
       method: 'POST',
-      headers: {'content-type':'application/json'},
-      body: POSTbody
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(folder),
+    })
+      .then(res => {
+        if (!res.ok)
+          return res.json().then(e => Promise.reject(e))
+        return res.json()
       })
-    .then(res => {
-      if (!res.ok) {
-        error = {code: res.statusText}
-      }
-      return res.json();
+      .then(folder => {
+        this.context.addFolder(folder)
+        this.props.history.push(`/folders/${folder.id}`)
       })
-    .catch(error => console.log(error))
+      .catch(error => {
+        console.error({ error })
+      })
   }
-  render(){
-    const {nameValid, validationMessages} = this.state
+
+  render() {
+    const { nameValid, validationMessages } = this.state
     return (
-      <form className="newFolderForm" onSubmit={e => this.handleSubmit(e)}>
-        <label htmlFor="folder">Folder Name
-        {!nameValid && (
-          <p className="error">{validationMessages.name}</p>
-        )}</label>
-        <input id="folder" type="text" name="folder" onChange={e => this.setName(e.target.value)} placeholder="new folder name"></input>
-          <ValidationError hasError={!this.state.nameValid} message={this.state.validationMessages.name}/>
-        <button type="submit" disabled={!this.state.formValid}>Submit</button>
-      </form>
+      <section className='AddFolder'>
+        <h2>Create a folder</h2>
+        <NotefulForm onSubmit={this.handleSubmit}>
+          <div className='field'>
+            <label htmlFor='folder-name-input'>
+              Name
+              {!nameValid && (
+            <p className="error">{validationMessages.name}</p>
+              )}</label>
+            <input type='text' id='folder-name-input' name='folder-name' onChange={e => this.setName(e.target.value)} />
+            <ValidationError hasError={!this.state.nameValid} message={this.state.validationMessages.name}/>
+          </div>
+          <div className='buttons'>
+            <button type='submit' disabled={!this.state.formValid}>
+              Add folder
+            </button>
+          </div>
+        </NotefulForm>
+      </section>
     )
   }
 }
