@@ -4,7 +4,7 @@ import ApiContext from '../ApiContext'
 import { findNote } from '../notes-helpers'
 import './NotePageMain.css'
 
-export default class NotePageMain extends React.Component {
+class NotePageMain extends React.Component {
   static defaultProps = {
     match: {
       params: {}
@@ -37,3 +37,5 @@ export default class NotePageMain extends React.Component {
     )
   }
 }
+
+export default NotePageMain
