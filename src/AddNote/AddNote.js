@@ -1,6 +1,7 @@
 import React from 'react'
 import ValidationError from '../ValidationError/ValidationError'
 import NotefulContext from '../NotefulContext/NotefulContext'
+import PropTypes from 'prop-types'
 
 
 export default class AddNote extends React.Component {
@@ -10,57 +11,35 @@ export default class AddNote extends React.Component {
     this.state = {
       name: '',
       content:'',
-      // folder: '',
       nameValid: false,
-      // folderValid: false,
       contentValid: false,
       formValid: false,
       hasError: false,
       validationMessages: {
         name: '',
-        // folder: '',
         content: ''
       }
     }
   }
-  // setFolder(folder) {
-  //   this.setState({folder}, () => this.validateFolder(folder));
-  // }
+
   setName(name) {
     this.setState({name}, () => this.validateName(name));
   }
   setContent(content){
     this.setState({content}, () => this.validateContent(content))
   }
-  // validateFolder(folder) {
-  //      const fieldErrors = {...this.state.validationMessages};
-  //      let folderValid = true;
-  //      let hasError = false
-
-  //      folder = folder.replace(/[\s-]/g, ''); // Remove whitespace and dashes
-  //      if (folder.length < 3 || folder.length === 0) { // Check if it's 9 characters long
-  //          fieldErrors.folder = 'Folder name must be at least three characters long';
-  //          folderValid = false;
-  //          hasError = true
-  //      } else {
-  //        fieldErrors.folder = '';
-  //        folderValid = true
-  //        hasError = false
-  //      }
-  //      this.setState({validationMessages: fieldErrors, folderValid: !hasError}, this.formValid);
-  // }
   validateName(name) {
     const fieldErrors = {...this.state.validationMessages};
-    let nameValid = true;
+    this.nameValid = true;
     let hasError = false
 
     if (name.length === 0 || name.length < 5) {
       fieldErrors.name = "Name needs to be at least 5 characters long"
-      nameValid = false
+      this.nameValid = false
       hasError = true
     } else {
       fieldErrors.name = ''
-      nameValid = true
+      this.nameValid = true
       hasError = false
     }
     this.setState({validationMessages: fieldErrors, nameValid: !hasError}, this.formValid)
@@ -70,12 +49,17 @@ export default class AddNote extends React.Component {
     let contentValid = true;
     let hasError = false
 
-    if (content.length === 0 || content.length < 10) {
-      fieldErrors.content = 'Note content should be at least 10 characters long';
+    if (content.length === 0) {
+      fieldErrors.content = 'Note content cannot be emptry';
       contentValid = false;
       hasError = true;
     }
     else {
+      if (content.length < 10) {
+        fieldErrors.content = "Note must be at least 10 characters long";
+        contentValid = false;
+        hasError = true;
+      }
       fieldErrors.content = ''
       contentValid = true;
       hasError = false;
@@ -91,7 +75,13 @@ export default class AddNote extends React.Component {
     e.preventDefault();
     const {name, content} = this.state;
     const folder = e.target.folder.value;
-    const noteBody = {folderId: folder, name: name, content: content}
+    const now = new Date();
+    // We weren't previously providing a modified date, now we are
+    const noteBody = {
+      folderId: folder,
+      name: name,
+      content: content,
+      modified: now}
     const POSTbody = JSON.stringify(noteBody)
     let error = false;
     fetch('http://localhost:9090/notes', {
@@ -106,7 +96,9 @@ export default class AddNote extends React.Component {
         return res.json();
       })
       .then(data => {
+        alert(`Your new note was created! You typed "${data.content}"`)
         console.log('Your new note is', data)
+        window.location.href = '/'
         })
     .catch(error => console.log(error))
   }
@@ -143,4 +135,15 @@ export default class AddNote extends React.Component {
       </form>
     )
   }
+}
+AddNote.propTypes = {
+  name: PropTypes.string.isRequired,
+  folder: PropTypes.string.isRequired,
+  content: PropTypes.string.isRequired
+}
+
+AddNote.defaultProps = {
+  name: 'Note Name',
+  folder: '12345',
+  content: 'lorem ipsum lorem ipsum'
 }
