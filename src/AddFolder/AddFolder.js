@@ -8,6 +8,7 @@ export default class AddFolder extends React.Component {
       name: '',
       nameValid: false,
       formValid: false,
+      hasError: false,
       validationMessages: {
         name: '',
       }
@@ -53,13 +54,9 @@ export default class AddFolder extends React.Component {
       if (!res.ok) {
         error = {code: res.statusText}
       }
-      console.log(res.statusText);
+      return res.json();
       })
     .catch(error => console.log(error))
-
-    // 1. Need to make POST request to the API
-    // 2. Repeat this process for Add Note component
-    // 3. Wrap Error Boundaries around these thigns
   }
   render(){
     const {name, nameValid, validationMessages} = this.state
